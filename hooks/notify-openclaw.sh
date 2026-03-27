@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${OPENCLAW_NOTIFY_URL:?OPENCLAW_NOTIFY_URL is required}"
-: "${OPENCLAW_NOTIFY_TOKEN:?OPENCLAW_NOTIFY_TOKEN is required}"
+: "${OPENCLAW_HOOKS_URL:?OPENCLAW_HOOKS_URL is required}"
+: "${OPENCLAW_HOOKS_TOKEN:?OPENCLAW_HOOKS_TOKEN is required}"
+: "${OPENCLAW_HOOKS_TO:?OPENCLAW_HOOKS_TO is required}"
 
 NODE_NAME="$(hostname -s 2>/dev/null || hostname || echo unknown-node)"
 TMUX_SESSION=""
 TMUX_PANE=""
-TASK_ID="${OPENCLAW_TASK_ID:-}"
-SUMMARY="${OPENCLAW_SUMMARY:-}"
 TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 if [ -n "${TMUX:-}" ] && command -v tmux >/dev/null 2>&1; then
@@ -24,27 +23,36 @@ if [ -z "$TMUX_PANE" ]; then
   TMUX_PANE="${OPENCLAW_TMUX_PANE:-unknown-pane}"
 fi
 
-JSON_PAYLOAD="$(python3 - <<'PY' "$NODE_NAME" "$TMUX_SESSION" "$TMUX_PANE" "$TASK_ID" "$SUMMARY" "$TS"
+MESSAGE_PAYLOAD="$(python3 - <<'PY' "$NODE_NAME" "$TMUX_SESSION" "$TMUX_PANE" "$TS"
 import json, sys
-node, tmux_session, tmux_pane, task_id, summary, ts = sys.argv[1:7]
+node, tmux_session, tmux_pane, ts = sys.argv[1:5]
+message = "\n".join([
+    "Claude Code stop event",
+    f"node={node}",
+    f"tmux_session={tmux_session}",
+    f"tmux_pane={tmux_pane}",
+    f"ts={ts}",
+])
 payload = {
-    "event": "claude_stop",
-    "version": "v1",
-    "node": node,
-    "tmuxSession": tmux_session,
-    "tmuxPane": tmux_pane,
-    "ts": ts,
+    "message": message,
+    "wakeMode": "now",
+    "deliver": True,
+    "channel": "telegram",
+    "to": node and None,
 }
-if task_id:
-    payload["taskId"] = task_id
-if summary:
-    payload["summary"] = summary
 print(json.dumps(payload, ensure_ascii=False))
 PY
 )"
 
-curl -fsS -X POST "$OPENCLAW_NOTIFY_URL/notify/claude-stop" \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $OPENCLAW_NOTIFY_TOKEN" \
-  --data "$JSON_PAYLOAD"
+MESSAGE_PAYLOAD="$(python3 - <<'PY' "$MESSAGE_PAYLOAD" "$OPENCLAW_HOOKS_TO"
+import json, sys
+payload = json.loads(sys.argv[1])
+payload['to'] = sys.argv[2]
+print(json.dumps(payload, ensure_ascii=False))
+PY
+)"
 
+curl -fsS -X POST "$OPENCLAW_HOOKS_URL/hooks/agent" \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $OPENCLAW_HOOKS_TOKEN" \
+  --data "$MESSAGE_PAYLOAD"
