@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  ts-jumpbox:
+    image: tailscale/tailscale:stable
+    container_name: ts-jumpbox
+    hostname: ${TS_HOSTNAME:-ts-jumpbox}
+    restart: unless-stopped
+
+    ports:
+      - "${TS_SOCKS5_PORT:-1055}:1055"
+
+    environment:
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "true"
+      TS_SOCKS5_SERVER: :1055
+      TS_AUTHKEY: ${TS_AUTHKEY}
+      TS_EXTRA_ARGS: >-
+        --exit-node=${TS_EXIT_NODE}
+        ${TS_EXTRA_ARGS:-}
+      TS_AUTH_ONCE: "true"
+
+    volumes:
+      - ./tailscale-state:/var/lib/tailscale
