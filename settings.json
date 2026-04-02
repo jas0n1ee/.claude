@@ -1,16 +1,19 @@
 {
+  "env": {
+    "NO_PROXY": "localhost,127.0.0.1,192.168.,10.,172.16."
+  },
   "hooks": {
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
-            "type": "command",
+            "async": true,
             "command": "bash ~/.claude/hooks/notify-openclaw.sh",
             "timeout": 30,
-            "async": true
+            "type": "command"
           }
-        ]
+        ],
+        "matcher": ""
       }
     ]
   },
