@@ -16,3 +16,13 @@
 ## 危险命令警示
 - ❌ `rm -rf` - 删除前必须二次确认
 - ❌ 不要组合使用 `mv` + `rm -rf` 而不检查中间状态
+
+# Bug的呈递
+
+For every bug:
+1. Classify it first
+2. State the primary environment for debugging:
+3. Provide the smallest reproducible path.
+4. Propose at most 2 candidate fixes, ranked by likelihood.
+5. Do not introduce new infrastructure unless it directly helps this bug.
+6. Report progress in user-visible terms, not framework phases.
