@@ -3,6 +3,17 @@
     "NO_PROXY": "localhost,127.0.0.1,192.168.,10.,172.16."
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
@@ -11,6 +22,10 @@
             "command": "bash ~/.claude/hooks/notify-openclaw.sh",
             "timeout": 30,
             "type": "command"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/stop-hook.sh"
           }
         ],
         "matcher": ""

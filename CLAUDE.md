@@ -26,3 +26,41 @@ For every bug:
 4. Propose at most 2 candidate fixes, ranked by likelihood.
 5. Do not introduce new infrastructure unless it directly helps this bug.
 6. Report progress in user-visible terms, not framework phases.
+
+## Swarm 模式
+
+### Guard：检测是否在 tmux 中
+
+启动时首先用 bash tool 执行：
+```bash
+[ -z "$TMUX" ] && echo "NOT_IN_TMUX" || echo "IN_TMUX"
+```
+
+如果输出是 `NOT_IN_TMUX`，跳过以下所有 swarm 逻辑，正常工作。
+
+---
+
+### 身份检测与升格
+
+如果在 tmux 中，执行：
+```bash
+SESSION=$(tmux display-message -p '#S')
+CURRENT_WINDOW=$(tmux display-message -p '#W')
+HAS_ORCHESTRATOR=$(tmux list-windows -t "$SESSION" -F '#W' | grep -c '^orchestrator$')
+
+echo "SESSION=$SESSION"
+echo "CURRENT_WINDOW=$CURRENT_WINDOW"
+echo "HAS_ORCHESTRATOR=$HAS_ORCHESTRATOR"
+```
+
+根据输出判断：
+
+- 如果 `HAS_ORCHESTRATOR=0`：当前 session 还没有 orchestrator，你来担任。执行：
+```bash
+  tmux rename-window -t "$SESSION:$CURRENT_WINDOW" orchestrator
+```
+  然后用 Read tool 读取 `~/.claude/swarm/orchestrator.md`，进入 orchestrator 模式。
+
+- 如果 `HAS_ORCHESTRATOR=1` 且 `CURRENT_WINDOW=orchestrator`：你已经是 orchestrator，直接读取 `~/.claude/swarm/orchestrator.md`。
+
+- 如果 `HAS_ORCHESTRATOR=1` 且 `CURRENT_WINDOW≠orchestrator`：你是 worker，读取 `~/.claude/swarm/worker.md`，进入 worker 模式。你的 identity 就是当前的 window 名。
