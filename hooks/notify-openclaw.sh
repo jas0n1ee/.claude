@@ -52,7 +52,7 @@ print(json.dumps(payload, ensure_ascii=False))
 PY
 )"
 
-curl -fsS -X POST "$OPENCLAW_HOOKS_URL/hooks/agent" \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $OPENCLAW_HOOKS_TOKEN" \
-  --data "$MESSAGE_PAYLOAD"
+#curl -fsS -X POST "$OPENCLAW_HOOKS_URL/hooks/agent" \
+#  -H 'Content-Type: application/json' \
+#  -H "Authorization: Bearer $OPENCLAW_HOOKS_TOKEN" \
+#  --data "$MESSAGE_PAYLOAD"
