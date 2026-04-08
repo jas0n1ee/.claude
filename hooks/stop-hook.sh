@@ -1,10 +1,11 @@
 #!/bin/bash
 [ -z "$TMUX" ] && exit 0
 
-# 用 $TMUX_PANE（继承自启动 Claude 的 shell，稳定）查询当前 pane 所属窗口
-# 不带 -t 时 tmux display-message 返回客户端当前活跃窗口，会随用户切换而变化
-CURRENT_WINDOW=$(tmux display-message -p '#W' -t "$TMUX_PANE")
-CURRENT_SESSION=$(tmux display-message -p '#S' -t "$TMUX_PANE")
+# 获取当前 pane ID（不依赖 TMUX_PANE 环境变量）
+CURRENT_PANE=$(tmux display-message -p '#D')
+# 通过 pane ID 获取 window 和 session（稳定，不随用户切换窗口而变化）
+CURRENT_WINDOW=$(tmux display-message -t "$CURRENT_PANE" -p '#W')
+CURRENT_SESSION=$(tmux display-message -t "$CURRENT_PANE" -p '#S')
 LOG_DIR="$HOME/.claude/swarm/.logs"
 LOG_FILE="$LOG_DIR/stop-hook.log"
 TS=$(date '+%Y-%m-%d %H:%M:%S')

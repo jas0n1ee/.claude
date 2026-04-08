@@ -1,8 +1,11 @@
 #!/bin/bash
 [ -z "$TMUX" ] && exit 0
 
-SESSION=$(tmux display-message -p '#S' -t "$TMUX_PANE")
-CURRENT_WINDOW=$(tmux display-message -p '#W' -t "$TMUX_PANE")
+# 获取当前 pane ID（不依赖 TMUX_PANE 环境变量）
+CURRENT_PANE=$(tmux display-message -p '#D')
+# 通过 pane ID 获取 session 和 window（稳定，不随用户切换窗口而变化）
+SESSION=$(tmux display-message -t "$CURRENT_PANE" -p '#S')
+CURRENT_WINDOW=$(tmux display-message -t "$CURRENT_PANE" -p '#W')
 HAS_ORCHESTRATOR=$(tmux list-windows -t "$SESSION" -F '#W' | grep -c '^orchestrator$')
 
 if [ "$HAS_ORCHESTRATOR" = "0" ]; then
