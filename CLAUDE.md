@@ -46,7 +46,7 @@ For every bug:
 ```bash
 SESSION=$(tmux display-message -p '#S')
 CURRENT_WINDOW=$(tmux display-message -p '#W')
-HAS_ORCHESTRATOR=$(tmux list-windows -t "$SESSION" -F '#W' | grep -c '^orchestrator$')
+HAS_ORCHESTRATOR=$(tmux list-windows -t "$SESSION" -F '#W' | grep -cE '^orchestrator(-|$)')
 
 echo "SESSION=$SESSION"
 echo "CURRENT_WINDOW=$CURRENT_WINDOW"
@@ -59,8 +59,8 @@ echo "HAS_ORCHESTRATOR=$HAS_ORCHESTRATOR"
 ```bash
   tmux rename-window -t "$SESSION:$CURRENT_WINDOW" orchestrator
 ```
-  然后用 Read tool 读取 `~/.claude/swarm/orchestrator.md`，进入 orchestrator 模式。
+  然后用 Read tool 读取 `swarm/orchestrator.md`，进入 orchestrator 模式。
 
-- 如果 `HAS_ORCHESTRATOR=1` 且 `CURRENT_WINDOW=orchestrator`：你已经是 orchestrator，直接读取 `~/.claude/swarm/orchestrator.md`。
+- 如果 `HAS_ORCHESTRATOR=1` 且 `CURRENT_WINDOW=orchestrator`：你已经是 orchestrator，直接读取 `swarm/orchestrator.md`。
 
-- 如果 `HAS_ORCHESTRATOR=1` 且 `CURRENT_WINDOW≠orchestrator`：你是 worker，读取 `~/.claude/swarm/worker.md`，进入 worker 模式。你的 identity 就是当前的 window 名。
+- 如果 `HAS_ORCHESTRATOR=1` 且 `CURRENT_WINDOW≠orchestrator`：你是 worker，读取 `swarm/worker.md`，进入 worker 模式。你的 identity 就是当前的 window 名。

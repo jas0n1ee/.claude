@@ -1,12 +1,18 @@
 #!/bin/bash
-[ -z "$TMUX" ] && exit 0
+set -euo pipefail
+[ -z "${TMUX:-}" ] && exit 0
 
-# 获取当前 pane ID（不依赖 TMUX_PANE 环境变量）
-CURRENT_PANE=$(tmux display-message -p '#D')
-# 通过 pane ID 获取 window 和 session（稳定，不随用户切换窗口而变化）
-CURRENT_WINDOW=$(tmux display-message -t "$CURRENT_PANE" -p '#W')
-CURRENT_SESSION=$(tmux display-message -t "$CURRENT_PANE" -p '#S')
-LOG_DIR="$HOME/.claude/swarm/.logs"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=../swarm/bin/swarm-env.sh
+. "$SCRIPT_DIR/../swarm/bin/swarm-env.sh"
+
+SWARM_PANE_ID="$(tmux display-message -p '#D')"
+export SWARM_PANE_ID
+
+# 通过 pane 归属的窗口和 session 判断身份，避免随用户切换窗口漂移
+CURRENT_WINDOW="$(swarm_window)"
+CURRENT_SESSION="$(swarm_session)"
+LOG_DIR="$SWARM_LOG_DIR"
 LOG_FILE="$LOG_DIR/stop-hook.log"
 TS=$(date '+%Y-%m-%d %H:%M:%S')
 
@@ -21,7 +27,7 @@ if [ "$CURRENT_WINDOW" = "orchestrator" ]; then
 fi
 
 # 如果 orchestrator 窗口不存在，跳过汇报
-HAS_ORCHESTRATOR=$(tmux list-windows -t "$CURRENT_SESSION" -F '#W' | grep -c '^orchestrator$' || true)
+HAS_ORCHESTRATOR="$(swarm_has_orchestrator "$CURRENT_SESSION")"
 if [ "$HAS_ORCHESTRATOR" = "0" ]; then
   log "SKIP: no orchestrator window in session"
   exit 0
@@ -35,20 +41,14 @@ data = json.load(sys.stdin)
 print(data.get('last_assistant_message', ''))
 ")
 
-TASK_DONE=$(echo "$LAST_MESSAGE" | grep "^TASK_DONE:" | tail -1)
-STATUS=$(echo "$LAST_MESSAGE" | grep "^STATUS:" | tail -1)
-NEXT_INFO=$(echo "$LAST_MESSAGE" | grep "^NEXT_NEEDED:" | tail -1)
-
-if [ -z "$TASK_DONE" ]; then
-  # 没有结构化 TASK_DONE，说明 worker 还在执行中间步骤，静默退出
-  # stop hook 在每次 Claude 响应结束时都触发，不只是 session 结束
-  exit 0
-fi
-
-SUMMARY="$TASK_DONE | $STATUS | $NEXT_INFO"
+# SUMMARY = worker 的最后一条完整消息
+# stop hook 在 Claude 等待 human input 时触发，这里直接传递完整原始消息
+SUMMARY="$LAST_MESSAGE"
 
 # 主 channel：写入 orchestrator inbox（worker → orchestrator 方向）
-INBOX_FILE="$HOME/.claude/swarm/.inbox/$CURRENT_SESSION/orchestrator/${CURRENT_WINDOW}.msg"
+# 使用 /tmp 避免 .claude 目录的敏感文件权限拦截
+swarm_ensure_runtime "$CURRENT_SESSION"
+INBOX_FILE="$(swarm_message_file "$CURRENT_SESSION" "orchestrator" "$CURRENT_WINDOW")"
 mkdir -p "$(dirname "$INBOX_FILE")"
 echo "$SUMMARY" > "$INBOX_FILE"
 log "INBOX WRITE: $INBOX_FILE"

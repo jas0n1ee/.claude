@@ -16,7 +16,7 @@
 ## 完成任务时的结构化输出
 
 每次完成一个任务阶段，**必须**在回复末尾输出以下格式，
-stop hook 依赖这个格式将你的汇报发送给 orchestrator：
+stop hook 会回传你的最后一条完整消息；保持以下格式可以让 orchestrator 更稳定地解析结果：
 
     TASK_DONE: <一句话描述完成了什么>
     STATUS: success | blocked | needs_review
@@ -51,6 +51,8 @@ stop hook 依赖这个格式将你的汇报发送给 orchestrator：
     NEXT_NEEDED: 需要硬件在场才能复现，或提供更多日志上下文
 
 ---
+
+共享运行时目录：默认使用 `/tmp/claude-swarm`
 
 ## 不要做的事
 

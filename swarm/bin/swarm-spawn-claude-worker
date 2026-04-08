@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=swarm-env.sh
+. "$SCRIPT_DIR/swarm-env.sh"
+
+usage() {
+  echo "Usage: $(basename "$0") <worker-name> <task...>" >&2
+}
+
+if [ "$#" -lt 2 ]; then
+  usage
+  exit 1
+fi
+
+swarm_require_tmux
+
+WORKER_NAME="$1"
+shift
+TASK="$*"
+SESSION="${SWARM_SESSION:-$(swarm_session)}"
+LAUNCH_CMD="${CLAUDE_WORKER_LAUNCH_CMD:-dangerclaude}"
+
+swarm_ensure_runtime "$SESSION"
+"$SCRIPT_DIR/swarm-send" "$WORKER_NAME" "$TASK" >/dev/null
+
+if tmux list-windows -t "$SESSION" -F '#W' | grep -qx "$WORKER_NAME"; then
+  echo "Worker already exists: $SESSION:$WORKER_NAME"
+  exit 0
+fi
+
+tmux new-window -t "$SESSION" -n "$WORKER_NAME"
+sleep 1
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "$LAUNCH_CMD" Enter
+sleep 3
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "$TASK" Enter
+sleep 0.3
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "" Enter
+
+echo "Spawned Claude worker $SESSION:$WORKER_NAME"

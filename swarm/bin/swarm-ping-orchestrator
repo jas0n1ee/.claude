@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=swarm-env.sh
+. "$SCRIPT_DIR/swarm-env.sh"
+
+swarm_require_tmux
+
+SESSION="${SWARM_SESSION:-$(swarm_session)}"
+WINDOW_NAME="$(swarm_orchestrator_window_name "$SESSION")"
+
+if [ -z "$WINDOW_NAME" ]; then
+  echo "No orchestrator window found in session '$SESSION'" >&2
+  exit 1
+fi
+
+DEFAULT_MESSAGE="过去一个小时了。请检查当前 worker 状态、未读 inbox、阻塞项，以及是否需要继续迭代或向 human 汇报。"
+MESSAGE="${*:-$DEFAULT_MESSAGE}"
+
+swarm_ensure_runtime "$SESSION"
+SESSION_RUNTIME_DIR="$(swarm_runtime_session_dir "$SESSION")"
+LOG_PANE_FILE="$SESSION_RUNTIME_DIR/orchestrator-log-pane"
+WINDOW_TARGET="$SESSION:$WINDOW_NAME"
+
+ensure_log_pane() {
+  local pane_id=""
+
+  if [ -f "$LOG_PANE_FILE" ]; then
+    pane_id="$(cat "$LOG_PANE_FILE")"
+    if tmux display-message -p -t "$pane_id" '#{pane_id}' >/dev/null 2>&1; then
+      echo "$pane_id"
+      return 0
+    fi
+  fi
+
+  pane_id="$(tmux split-window -d -v -l 8 -P -F '#{pane_id}' -t "$WINDOW_TARGET")"
+  tmux select-pane -t "$pane_id" -T "swarm-log"
+  printf '%s\n' "$pane_id" > "$LOG_PANE_FILE"
+  echo "$pane_id"
+}
+
+find_main_pane() {
+  local log_pane="$1"
+  local pane_id=""
+
+  pane_id="$(tmux list-panes -t "$WINDOW_TARGET" -F '#{pane_id} #{pane_title}' | awk -v log_pane="$log_pane" '$1 != log_pane && $2 != "swarm-log" { print $1; exit }')"
+  if [ -n "$pane_id" ]; then
+    echo "$pane_id"
+    return 0
+  fi
+
+  pane_id="$(tmux list-panes -t "$WINDOW_TARGET" -F '#{pane_id}' | awk -v log_pane="$log_pane" '$1 != log_pane { print $1; exit }')"
+  if [ -n "$pane_id" ]; then
+    echo "$pane_id"
+    return 0
+  fi
+
+  echo "Could not determine orchestrator main pane in $WINDOW_TARGET" >&2
+  exit 1
+}
+
+send_log_line() {
+  local pane_id="$1"
+  local line="$2"
+  local cmd=""
+
+  cmd="$(printf 'printf "%%s\\n" %q' "$line")"
+  tmux send-keys -t "$pane_id" "$cmd" Enter
+}
+
+LOG_PANE="$(ensure_log_pane)"
+MAIN_PANE="$(find_main_pane "$LOG_PANE")"
+TS="$(date '+%Y-%m-%d %H:%M:%S')"
+
+send_log_line "$LOG_PANE" "[$TS] swarm-ping-orchestrator session=$SESSION window=$WINDOW_NAME"
+send_log_line "$LOG_PANE" "[$TS] prompt=$MESSAGE"
+
+tmux send-keys -t "$MAIN_PANE" "$MESSAGE" Enter
+tmux send-keys -t "$MAIN_PANE" "" Enter
+
+echo "Pinged orchestrator in session '$SESSION' via pane $MAIN_PANE"

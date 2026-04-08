@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=swarm-env.sh
+. "$SCRIPT_DIR/swarm-env.sh"
+
+usage() {
+  echo "Usage: $(basename "$0") <recipient> <message...>" >&2
+}
+
+if [ "$#" -lt 2 ]; then
+  usage
+  exit 1
+fi
+
+RECIPIENT="$1"
+shift
+MESSAGE="$*"
+
+SESSION="${SWARM_SESSION:-}"
+if [ -z "$SESSION" ]; then
+  swarm_require_tmux
+  SESSION="$(swarm_session)"
+fi
+
+SENDER="${SWARM_IDENTITY:-orchestrator}"
+swarm_ensure_runtime "$SESSION"
+
+INBOX_FILE="$(swarm_message_file "$SESSION" "$RECIPIENT" "$SENDER")"
+mkdir -p "$(dirname "$INBOX_FILE")"
+printf '%s\n' "$MESSAGE" > "$INBOX_FILE"
+echo "Wrote inbox message to $INBOX_FILE"
+
+if command -v tmux >/dev/null 2>&1 && [ -n "${TMUX:-}" ]; then
+  if tmux list-windows -t "$SESSION" -F '#W' | grep -qx "$RECIPIENT"; then
+    tmux send-keys -t "$SESSION:$RECIPIENT.0" "$MESSAGE" Enter
+    sleep 0.3
+    tmux send-keys -t "$SESSION:$RECIPIENT.0" "" Enter
+    echo "Notified tmux window $SESSION:$RECIPIENT.0"
+  fi
+fi
