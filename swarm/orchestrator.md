@@ -20,24 +20,50 @@
 ```bash
 SESSION=$(tmux display-message -p '#S')
 WORKER_NAME="worker-alice"  # 用具体名字，便于识别
+TASK="你的任务是：..."
 
+# 主 channel：写入 worker inbox（可靠，持久化）
+mkdir -p ~/.claude/swarm/.inbox/$SESSION/$WORKER_NAME
+echo "$TASK" > ~/.claude/swarm/.inbox/$SESSION/$WORKER_NAME/orchestrator.msg
+
+# 次 channel：tmux 推送通知（best-effort）
 tmux new-window -t "$SESSION" -n "$WORKER_NAME"
 sleep 1
-tmux send-keys -t "$SESSION:$WORKER_NAME.0" "claude" Enter
-sleep 3  # 等待 claude 启动并完成身份检测
-tmux send-keys -t "$SESSION:$WORKER_NAME.0" "你的任务是：..." Enter
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "dangerclaude" Enter
+sleep 3  # 等待 claude 启动并完成身份检测（session-start hook 会自动投递 inbox 消息）
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "$TASK" Enter
+sleep 0.3
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "" Enter  # 防止 bracketed paste 模式吞掉 Enter
 ```
+
+> worker 启动时 session-start hook 会自动读取 inbox，即使 tmux 推送失败，任务也已持久化。
 
 ### 给已有 worker 布置新任务
 ```bash
-tmux send-keys -t "$SESSION:$WORKER_NAME.0" "新任务：..." Enter
+TASK="新任务：..."
+
+# 主 channel：写入 worker inbox
+mkdir -p ~/.claude/swarm/.inbox/$SESSION/$WORKER_NAME
+echo "$TASK" > ~/.claude/swarm/.inbox/$SESSION/$WORKER_NAME/orchestrator.msg
+
+# 次 channel：tmux 推送通知
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "$TASK" Enter
+sleep 0.3
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "" Enter  # 防止 bracketed paste 模式吞掉 Enter
 ```
 
 ### 复用 worker（清空上下文）
 ```bash
+TASK="新任务：..."
+
+mkdir -p ~/.claude/swarm/.inbox/$SESSION/$WORKER_NAME
+echo "$TASK" > ~/.claude/swarm/.inbox/$SESSION/$WORKER_NAME/orchestrator.msg
+
 tmux send-keys -t "$SESSION:$WORKER_NAME.0" "/clear" Enter
 sleep 1
-tmux send-keys -t "$SESSION:$WORKER_NAME.0" "新任务：..." Enter
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "$TASK" Enter
+sleep 0.3
+tmux send-keys -t "$SESSION:$WORKER_NAME.0" "" Enter  # 防止 bracketed paste 模式吞掉 Enter
 ```
 
 ### 回收 worker（任务完成，不再需要）
@@ -77,13 +103,26 @@ tmux list-windows -t "$SESSION"
 
 ## 接收 TASK_DONE 汇报
 
-Worker 完成时会通过 stop hook 自动发送汇报，格式如下：
+Worker 完成时通过两个 channel 汇报：
+
+1. **inbox 文件（可靠）**：`~/.claude/swarm/.inbox/{session}/{worker}.msg`，文件存在 = 未读
+2. **tmux 推送通知（best-effort）**：直接发到你的输入框
+
+通常你会先收到 tmux 推送通知，格式如下：
 
     [worker-alice] TASK_DONE: 完成了什么 | STATUS: success/blocked/needs_review | NEXT_NEEDED: 下一步信息
 
+**处理完一条汇报后，标记为已读（删除 inbox 文件）：**
+```bash
+SESSION=$(tmux display-message -p '#S')
+rm ~/.claude/swarm/.inbox/$SESSION/orchestrator/worker-alice.msg
+```
+
+若 tmux 推送丢失，inbox 文件会在你**下次启动**时自动通过 session-start hook 投递给你，无需主动查看。
+
 收到汇报后：
 
-- **STATUS: success**：审查内容，决定下一步任务或回收
+- **STATUS: success**：审查内容，标记已读，决定下一步任务或回收
 - **STATUS: blocked**：worker 遇到障碍，需要你介入解决或重新拆解任务
 - **STATUS: needs_review**：worker 不确定结果是否正确，需要你或 human 审查
 - **未收到结构化汇报**：说明 worker 的输出不符合格式约定，提醒它遵守 worker.md 的输出规范
