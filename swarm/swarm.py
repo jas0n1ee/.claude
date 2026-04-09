@@ -158,6 +158,32 @@ def report_issue(description: str, component: str = "unknown") -> None:
 
 # ── Orchestrator send with concurrency protection ─────────────────────────────
 
+def _wait_for_copy_mode_exit(pane: libtmux.Pane, timeout: float = 30) -> bool:
+    """
+    Wait until pane exits copy mode (or other mode).
+
+    Returns True if exited normally, False if timeout.
+    """
+    start = time.time()
+    check_interval = 0.1
+
+    while time.time() - start < timeout:
+        try:
+            # Query tmux for pane_in_mode variable
+            result = pane.cmd(
+                "display-message", "-p", "-t", pane.id, "#{pane_in_mode}"
+            )
+            in_mode = result.stdout[0].strip() if result.stdout else "0"
+            if in_mode == "0":
+                return True
+        except Exception:
+            # If we can't query, assume not in mode and proceed
+            return True
+        time.sleep(check_interval)
+
+    return False  # Timeout
+
+
 def send_to_orchestrator_safe(
     session: libtmux.Session, sender: str, message: str
 ) -> None:
@@ -196,6 +222,11 @@ def send_to_orchestrator_safe(
         return
 
     pane = orch_window.panes[0]
+
+    # Wait if orchestrator pane is in copy mode (e.g., user scrolling)
+    # to avoid sending keys into the copy mode buffer
+    _wait_for_copy_mode_exit(pane, timeout=30)
+
     pane.send_keys(f"[{sender}] {message}", enter=True)
     time.sleep(0.3)
     pane.send_keys("", enter=True)  # flush bracketed-paste buffer
@@ -287,6 +318,10 @@ def cmd_send(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     pane = window.panes[0]
+
+    # Wait if worker pane is in copy mode (user scrolling history)
+    _wait_for_copy_mode_exit(pane, timeout=10)
+
     pane.send_keys(message, enter=True)
     time.sleep(0.3)
     pane.send_keys("", enter=True)
