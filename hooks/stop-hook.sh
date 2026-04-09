@@ -1,5 +1,6 @@
 #!/bin/bash
-set -euo pipefail
+# Soft error mode: log failures but never abort — inbox write must always complete
+set -uo pipefail
 [ -z "${TMUX:-}" ] && exit 0
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

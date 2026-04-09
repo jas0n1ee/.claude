@@ -5,7 +5,7 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume|clear",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",

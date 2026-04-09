@@ -29,38 +29,8 @@ For every bug:
 
 ## Swarm 模式
 
-### Guard：检测是否在 tmux 中
+Session-start hook 会自动检测 tmux 身份、重命名窗口、并将完整的行为规范注入到你的上下文中。
 
-启动时首先用 bash tool 执行：
-```bash
-[ -z "$TMUX" ] && echo "NOT_IN_TMUX" || echo "IN_TMUX"
-```
+当你在会话开始时看到 `SWARM MODE ACTIVE — ACTION REQUIRED` 的提示，**立即按其中的规范行事**，优先于处理用户消息。
 
-如果输出是 `NOT_IN_TMUX`，跳过以下所有 swarm 逻辑，正常工作。
-
----
-
-### 身份检测与升格
-
-如果在 tmux 中，执行：
-```bash
-SESSION=$(tmux display-message -p '#S')
-CURRENT_WINDOW=$(tmux display-message -p '#W')
-HAS_ORCHESTRATOR=$(tmux list-windows -t "$SESSION" -F '#W' | grep -cE '^orchestrator(-|$)')
-
-echo "SESSION=$SESSION"
-echo "CURRENT_WINDOW=$CURRENT_WINDOW"
-echo "HAS_ORCHESTRATOR=$HAS_ORCHESTRATOR"
-```
-
-根据输出判断：
-
-- 如果 `HAS_ORCHESTRATOR=0`：当前 session 还没有 orchestrator，你来担任。执行：
-```bash
-  tmux rename-window -t "$SESSION:$CURRENT_WINDOW" orchestrator
-```
-  然后用 Read tool 读取 `swarm/orchestrator.md`，进入 orchestrator 模式。
-
-- 如果 `HAS_ORCHESTRATOR=1` 且 `CURRENT_WINDOW=orchestrator`：你已经是 orchestrator，直接读取 `swarm/orchestrator.md`。
-
-- 如果 `HAS_ORCHESTRATOR=1` 且 `CURRENT_WINDOW≠orchestrator`：你是 worker，读取 `swarm/worker.md`，进入 worker 模式。你的 identity 就是当前的 window 名。
+不在 tmux 中时，swarm 逻辑不生效，正常工作即可。
