@@ -310,7 +310,7 @@ def cmd_kill(args: argparse.Namespace) -> None:
         )
         sys.exit(1)
 
-    window.kill_window()
+    window.kill()
     print(f"Killed worker '{worker_name}'")
     _log(f"[{session.name}] killed {worker_name}")
 
