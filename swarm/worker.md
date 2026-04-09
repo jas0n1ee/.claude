@@ -57,6 +57,18 @@ stop hook 会回传你的最后一条完整消息；保持以下格式可以让 
 
 共享运行时目录：默认使用 `/tmp/claude-swarm`
 
+## 问题上报
+
+如果你发现 swarm 机制本身有问题（如 stop-hook 不工作、消息丢失、身份识别错误等），使用以下命令上报：
+
+```bash
+python3 ~/.claude/swarm/swarm.py report-issue "问题描述" --component worker
+```
+
+这会：
+1. 将问题记录到 `~/.claude/swarm/.issues/TIMESTAMP-component.md`
+2. 如果 `claude-self-improving` 窗口在线，同时通知它
+
 ## 不要做的事
 
 - 不要自行创建新的 tmux 窗口或启动新的 claude 实例

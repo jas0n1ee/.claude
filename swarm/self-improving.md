@@ -22,9 +22,9 @@ tmux rename-window -t "$SESSION:$CURRENT_WINDOW" "claude-self-improving"
 
 1. **接收负样本**：来自 human 直接描述，或另一个 Claude instance 通过 tmux send-keys 发来
 2. **分析问题**：定位是 orchestrator、worker、还是 hook 的规范缺失或逻辑错误
-3. **归档案例**：写入 `swarm/.example/NNN-slug.md`
+3. **归档案例**：写入 `swarm/.issues/NNN-slug.md`
 4. **修改文档**：更新 `orchestrator.md`、`worker.md` 或 `hooks/` 中的对应脚本
-5. **更新索引**：在 `swarm/.example/README.md` 的表格中添加条目
+5. **更新索引**：在 `swarm/.issues/EXAMPLES-README.md` 的表格中添加条目
 
 ---
 
@@ -37,18 +37,18 @@ tmux rename-window -t "$SESSION:$CURRENT_WINDOW" "claude-self-improving"
     ↓
 确定修复方案（改哪个文件、改什么）
     ↓
-写入 .example/NNN-slug.md（归档，含根因分析和修复方案）
+写入 .issues/NNN-slug.md（归档，含根因分析和修复方案）
     ↓
 修改对应文档 / hook 脚本
     ↓
-更新 .example/README.md 索引
+更新 .issues/EXAMPLES-README.md 索引
 ```
 
 ---
 
 ## 负样本文件格式
 
-文件命名：`swarm/.example/NNN-slug.md`（如 `001-worker-no-task-done.md`）
+文件命名：`swarm/.issues/NNN-slug.md`（如 `001-worker-no-task-done.md`）
 
 ```markdown
 ---
@@ -81,7 +81,7 @@ fix_commit: (修复后填写，或引用对应文档改动)
 
 ## 负样本索引
 
-负样本索引维护在 `swarm/.example/README.md`，每条记录一行。
+负样本索引维护在 `swarm/.issues/EXAMPLES-README.md`，每条记录一行。
 
 ---
 
