@@ -35,6 +35,9 @@ stop hook 会回传你的最后一条完整消息；保持以下格式可以让 
 - 发现了什么超出本次任务范围但需要处理的问题
 - blocked 时需要什么才能继续
 
+**完成任务前**：运行 `git diff --stat HEAD` 并将实际修改的文件列表写入 NEXT_NEEDED，
+让 orchestrator 能够核对实际修改范围是否与任务要求一致。
+
 ### 示例
     TASK_DONE: 完成 ESP32 BLE 广播模块实现，已通过本地编译
     STATUS: success

@@ -16,19 +16,13 @@
     ],
     "Stop": [
       {
+        "matcher": "",
         "hooks": [
-          {
-            "async": true,
-            "command": "bash ~/.claude/hooks/notify-openclaw.sh",
-            "timeout": 30,
-            "type": "command"
-          },
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/stop-hook.sh"
           }
-        ],
-        "matcher": ""
+        ]
       }
     ]
   },
