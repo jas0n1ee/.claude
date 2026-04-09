@@ -61,12 +61,6 @@ swarm_inbox_dir() {
   printf '%s/inbox/%s/%s' "$SWARM_RUNTIME_ROOT" "$session" "$identity"
 }
 
-swarm_runtime_session_dir() {
-  local session="$1"
-
-  printf '%s/%s' "$SWARM_RUNTIME_DIR" "$session"
-}
-
 swarm_message_file() {
   local session="$1"
   local recipient="$2"
@@ -87,6 +81,5 @@ swarm_ensure_runtime() {
   mkdir -p \
     "$SWARM_LOG_DIR" \
     "$SWARM_RUNTIME_DIR" \
-    "$(swarm_runtime_session_dir "$session")" \
     "$SWARM_RUNTIME_ROOT/inbox/$session/orchestrator"
 }

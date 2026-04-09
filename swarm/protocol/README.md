@@ -37,7 +37,7 @@ This repo uses a shared Swarm layout so Claude Code and Codex can participate in
 - `swarm/bin/swarm-send`: write a message to a Swarm inbox and optionally notify over tmux
 - `swarm/bin/swarm-read`: print unread inbox messages for an identity
 - `swarm/bin/swarm-ack`: remove an inbox message after it has been handled
-- `swarm/bin/swarm-ping-orchestrator`: wake the current session's orchestrator and log the ping in a dedicated tmux pane
+- `swarm/bin/swarm-ping-orchestrator`: wake the current session's orchestrator by sending a prompt to its existing tmux pane
 
 ## Claude integration
 

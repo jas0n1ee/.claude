@@ -101,8 +101,6 @@ tmux list-windows -t "$SESSION"
 "$SWARM_REPO_ROOT/swarm/bin/swarm-ping-orchestrator" "过去一个小时了。请检查 blocked worker 和未读 inbox。"
 ```
 
-该脚本会在 orchestrator window 中维护一个 `swarm-log` pane，把每次唤醒的时间和消息打到该 pane 里。
-
 ### 管理你的 worker
 
 - **仅当多个任务可以并行时，才开启多个 worker**，串行任务复用同一个 worker 即可
