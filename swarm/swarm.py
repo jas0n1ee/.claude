@@ -22,7 +22,7 @@ except ImportError:
     import subprocess, sys as _sys
     print("[swarm] Installing libtmux...", file=_sys.stderr)
     subprocess.run(
-        [_sys.executable, "-m", "pip", "install", "--user", "libtmux"],
+        [_sys.executable, "-m", "pip", "install", "--user", "--break-system-packages", "libtmux"],
         check=True,
     )
     import libtmux  # noqa: E402
