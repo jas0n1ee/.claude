@@ -2,3 +2,4 @@ tailscale/tailscale-state/
 swarm/.example/
 swarm/.inbox/
 swarm/.logs/
+swarm/.issues/
