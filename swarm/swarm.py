@@ -19,12 +19,49 @@ from __future__ import annotations
 try:
     import libtmux
 except ImportError:
-    import subprocess, sys as _sys
-    print("[swarm] Installing libtmux...", file=_sys.stderr)
-    subprocess.run(
-        [_sys.executable, "-m", "pip", "install", "--user", "--break-system-packages", "libtmux"],
-        check=True,
-    )
+    import sys as _sys, json as _json, os as _os, tempfile as _tempfile
+    import urllib.request as _urlreq, zipfile as _zipfile
+    from pathlib import Path as _Path
+
+    def _vendor_libtmux() -> None:
+        vendor_dir = _Path(__file__).parent / "vendor"
+        vendor_dir.mkdir(exist_ok=True)
+        vendor_str = str(vendor_dir)
+        if vendor_str not in _sys.path:
+            _sys.path.insert(0, vendor_str)
+
+        if (vendor_dir / "libtmux").exists():
+            return  # already vendored
+
+        print("[swarm] Vendoring libtmux from PyPI...", file=_sys.stderr)
+        with _urlreq.urlopen("https://pypi.org/pypi/libtmux/json") as r:
+            data = _json.loads(r.read())
+
+        latest = data["info"]["version"]
+        wheels = [
+            f for f in data["releases"][latest]
+            if f["filename"].endswith("-py3-none-any.whl")
+        ]
+        if not wheels:
+            raise RuntimeError("[swarm] No pure-Python wheel found for libtmux")
+
+        url = wheels[0]["url"]
+        print(f"[swarm] Downloading {wheels[0]['filename']}...", file=_sys.stderr)
+        with _tempfile.NamedTemporaryFile(suffix=".whl", delete=False) as tmp:
+            with _urlreq.urlopen(url) as r:
+                tmp.write(r.read())
+            tmp_path = tmp.name
+
+        try:
+            with _zipfile.ZipFile(tmp_path) as zf:
+                members = [m for m in zf.namelist() if m.startswith("libtmux/")]
+                zf.extractall(vendor_dir, members)
+        finally:
+            _os.unlink(tmp_path)
+
+        print("[swarm] libtmux vendored OK.", file=_sys.stderr)
+
+    _vendor_libtmux()
     import libtmux  # noqa: E402
 
 import argparse

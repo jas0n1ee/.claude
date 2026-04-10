@@ -3,3 +3,4 @@ swarm/.example/
 swarm/.inbox/
 swarm/.logs/
 swarm/.issues/
+swarm/vendor/
