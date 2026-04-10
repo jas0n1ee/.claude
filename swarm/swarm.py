@@ -546,7 +546,8 @@ def cmd_stop_hook() -> None:
             sys.exit(0)
 
         # ── Orchestrator path ──────────────────────────────────────────────
-        if identity.startswith("orchestrator"):
+        # self-improving agent is also an orchestrator-like role
+        if identity.startswith("orchestrator") or identity == "claude-self-improving":
             if last_message and NOTIFY_HUMAN_SIGNAL in last_message:
                 _log(
                     f"[{session.name}:orchestrator] "
@@ -554,10 +555,14 @@ def cmd_stop_hook() -> None:
                 )
                 if NOTIFY_SCRIPT.exists():
                     try:
+                        # Pass the last message to notify script via env var
+                        env = os.environ.copy()
+                        env["CLAUDE_LAST_MESSAGE"] = last_message[:2000]  # Limit to avoid env size issues
                         subprocess.run(
                             ["bash", str(NOTIFY_SCRIPT)],
                             timeout=30,
-                            check=False,  # don't fail if env vars are missing
+                            check=False,
+                            env=env,
                         )
                     except Exception as notify_err:
                         report_issue(
@@ -631,7 +636,23 @@ def main() -> None:
     p.set_defaults(func=lambda _args: cmd_stop_hook())
 
     args = parser.parse_args()
-    args.func(args)
+    try:
+        args.func(args)
+    except SystemExit as e:
+        # Log non-zero exits (errors) but not --help (code 0)
+        if e.code != 0 and e.code is not None:
+            report_issue(
+                f"Command '{args.command}' exited with code {e.code}",
+                component=args.command,
+            )
+        raise
+    except Exception as e:
+        # Log unexpected errors to issues for self-improving agent review
+        report_issue(
+            f"Command '{args.command}' failed: {type(e).__name__}: {e}",
+            component=args.command,
+        )
+        raise
 
 
 if __name__ == "__main__":

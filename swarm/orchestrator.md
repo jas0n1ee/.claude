@@ -50,6 +50,8 @@ python3 ~/.claude/swarm/swarm.py status
 python3 ~/.claude/swarm/swarm.py ping "检查消息"
 ```
 
+**注意**：`ping` 命令只能发送给 orchestrator，不能指定 worker。消息内容作为唯一参数传递。如要给 worker 发消息，使用 `swarm.py send <worker-name> "消息"`。
+
 ### 发现 swarm 设计问题时上报
 ```bash
 python3 ~/.claude/swarm/swarm.py report-issue "问题描述" --component orchestrator
