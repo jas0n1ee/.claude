@@ -17,6 +17,10 @@
 - ❌ `rm -rf` - 删除前必须二次确认
 - ❌ 不要组合使用 `mv` + `rm -rf` 而不检查中间状态
 
+# Docker 使用
+
+- 在使用 Docker 的时候，永远要注意 User ID 与 Group ID，不然这个 Docker 命令运行生成的产物，其所有权可能归属于 root 而不属于当前用户。这会导致后面需要 sudo 权限才可以处理，会非常麻烦。
+
 # Bug的呈递
 
 For every bug:
