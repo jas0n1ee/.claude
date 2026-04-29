@@ -55,28 +55,30 @@ stop hook 会回传你的最后一条完整消息；保持以下格式可以让 
 
 ---
 
-共享运行时目录：默认使用 `/tmp/claude-swarm`
+共享运行时目录：默认使用 `/tmp/agent-swarm`
 
 ## 与 Orchestrator 通信
 
 ### 向 Orchestrator 汇报
 
-完成任务时，stop-hook 会自动将你的最后一条消息发送给 orchestrator。无需手动操作。
+完成任务时，stop-hook 会自动将你的最后一条 raw message 落盘，并向 orchestrator 发送短通知。无需手动操作。
+
+可见汇报应短而准确；长细节、日志、完整分析写入文件或引用 artifact 路径。超过 1000 字符的消息不会完整塞进 tmux 输入框。
 
 ### 需要主动唤起 Orchestrator
 
 如果任务执行中需要 orchestrator 立即介入（如发现阻塞、需要澄清），使用：
 ```bash
-python3 ~/.claude/swarm/swarm.py ping "简短描述需要 orchestrator 处理的事"
+python3 ~/.claude/swarm/swarm.py ping --message "简短描述需要 orchestrator 处理的事"
 ```
 
 **注意**：`ping` 只接受一个参数（消息内容），**不能**指定接收者。错误示例：
 ```bash
 # ❌ 错误 - ping 不能指定 worker
-python3 ~/.claude/swarm/swarm.py ping worker-alice "消息"
+python3 ~/.claude/swarm/swarm.py ping --message "给 worker-alice 的消息"
 
 # ✅ 正确 - 只传消息，自动发给 orchestrator
-python3 ~/.claude/swarm/swarm.py ping "发现阻塞：XX文件被占用"
+python3 ~/.claude/swarm/swarm.py ping --message "发现阻塞：XX文件被占用"
 ```
 
 ## 问题上报
