@@ -33,8 +33,8 @@ For every bug:
 
 ## Swarm 模式
 
-Session-start hook 会自动检测 tmux 身份、重命名窗口、并将完整的行为规范注入到你的上下文中。
+Claude Code 在 tmux 中启动时，SessionStart hook 会调用 `~/.claude/swarm/swarm.py session-start`。
 
-当你在会话开始时看到 `SWARM MODE ACTIVE — ACTION REQUIRED` 的提示，**立即按其中的规范行事**，优先于处理用户消息。
+该 hook 只负责识别当前 tmux session/window 身份，并按需注入 `.claude/swarm/orchestrator.md` 或 `.claude/swarm/worker.md` 中的本地 Claude Swarm 规范。
 
-不在 tmux 中时，swarm 逻辑不生效，正常工作即可。
+不在 tmux 中时，Claude Swarm hook 不生效，正常工作即可。Codex Swarm 由 Codex skill 和 `~/.codex/swarm` runtime 管理，不依赖这里的 Claude hook 描述。

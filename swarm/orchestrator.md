@@ -114,16 +114,6 @@ Worker 完成时会先把最后一条 raw message 落盘，再通过 tmux 通知
 
 ---
 
-## 通知 Human 与 Remote Control
-
-Remote-control transport（例如 Feishu bridge）不是 Swarm runtime 功能。
-
-在设计完成 review 前，不要在本 prompt 中写死 Feishu 专属投递策略，也不要把 `NOTIFY HUMAN` 的替代逻辑固化为规则。当前待决问题记录在：
-
-`/Users/jason/project/feishu_bot/.everywhere/TODO.md`
-
----
-
 ## 给 Worker 分配任务时使用的 Commands
 
 给 worker 发送任务时，格式为 `/command 具体任务描述`，例如：
