@@ -33,8 +33,8 @@ For every bug:
 
 ## Swarm 模式
 
-Claude Code 在 tmux 中启动时，SessionStart hook 会调用 `~/.claude/swarm/swarm.py session-start`。
+Swarm 已迁移为独立 skill：`~/.agents/skills/swarm`。
 
-该 hook 只负责识别当前 tmux session/window 身份，并按需注入 `.claude/swarm/orchestrator.md` 或 `.claude/swarm/worker.md` 中的本地 Claude Swarm 规范。
+Claude Code 不再通过 SessionStart hook 自动注入 Swarm 规范。需要使用 Swarm 时，通过 `/skills` 或正常 skill 选择加载 `swarm`。
 
-不在 tmux 中时，Claude Swarm hook 不生效，正常工作即可。Codex Swarm 由 Codex skill 和 `~/.codex/swarm` runtime 管理，不依赖这里的 Claude hook 描述。
+Claude worker 的 Stop hook 仅负责把 worker 最后一条消息回传给当前 tmux session 的 orchestrator；Swarm runtime 统一调用 `python3 ~/.agents/skills/swarm/scripts/swarm.py --engine claude ...`。

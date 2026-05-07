@@ -3,24 +3,13 @@
     "NO_PROXY": "localhost,127.0.0.1,192.168.,10.,172.16."
   },
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/session-start.sh"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/stop-hook.sh"
+            "command": "SWARM_ENGINE=claude python3 ~/.agents/skills/swarm/scripts/swarm.py stop-hook"
           }
         ]
       }
