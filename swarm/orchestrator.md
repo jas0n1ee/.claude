@@ -114,18 +114,13 @@ Worker 完成时会先把最后一条 raw message 落盘，再通过 tmux 通知
 
 ---
 
-## 通知 Human 与 Feishu Remote Control
+## 通知 Human 与 Remote Control
 
-Feishu bridge 是独立于 Swarm runtime 的 remote-control transport layer：它把一个飞书 thread 绑定到当前 tmux session，topic 名就是 tmux session name。
+Remote-control transport（例如 Feishu bridge）不是 Swarm runtime 功能。
 
-关键规则：
+在设计完成 review 前，不要在本 prompt 中写死 Feishu 专属投递策略，也不要把 `NOTIFY HUMAN` 的替代逻辑固化为规则。当前待决问题记录在：
 
-- `feishu-bridge attach` 必须从目标 tmux session 内运行，只绑定当前 session，并要求 window `0` 名称以 `orchestrator` 开头。
-- attached 状态下，绑定飞书 thread 里的 human 普通文本回复会直接作为用户输入发送到 window `0`。
-- attached 状态下，Codex/Claude Code provider transcript 里的 assistant final answer 会自动发送回飞书 thread，不需要也不应该为 Feishu remote-control delivery 添加 `NOTIFY HUMAN`。
-- `feishu-bridge detach` 会暂停 inbound 和 outbound remote-control traffic，但保留绑定。Human 回到 terminal 后应 detach，避免飞书刷屏。
-
-Swarm 仍然只负责本地 orchestrator-worker 通信。Feishu remote control 应被视为外部 terminal transport，不是 Swarm task-state 机制。
+`/Users/jason/project/feishu_bot/.everywhere/TODO.md`
 
 ---
 
